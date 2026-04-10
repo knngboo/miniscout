@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Map</title>
+        <style>
+            body {
+                font-family: sans-serif; background: #1a1a1a; color: white; text-align: center;
+            }
+            canvas {
+                background: #000; border: 2px solid #444; margin-top: 20px; cursor: crosshair;
+            }
+            .controls {
+                margin-top: 20px;
+            }
+            #scout {
+                background: #2ecc71; color: white;
+            }
+            #stop {
+                background: #e74c3c; color: white;
+            }
+            #reset {
+                background: #3498db; color: white;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>MiniScout Digital World</h1>
+        <div id="status">Status: Disconnected</div>
+
+        <canvas id="mapCanvas" width="600" height="400"></canvas>
+
+        <div class="controls">
+            <button id="scout">SCOUT</button>
+            <button id="stop">STOP</button>
+            <button id="reset">RESET MAP</button>
+        </div>
+        
+        <script>
+            const canvas = document.getElementById('mapCanvas');
+            const ctx =canvas.getContext('2d');
+            const status = document.getElementById('status');
+
+            const gateway = 'ws://';
+            let websocket;
+
+            function initWebSocket() {
+                websocket = new WebSocket(gateway);
+                websocket.onopen = () => status.innerText = 'Status: Connected to Mini Scout';
+                websocket.onclose = () => status.innerText = 'Status: Disconnected';
+                websocket.onmessage = (event) => {
+                    console.log("Data from Mini Scout:", event.data);
+                };
+            }
+
+            document.getElementById('scout').onclick = () => websocket.send("SCOUT");
+            document.getElementById('stop').onclick = () => websocket.send("STOP");
+            document.getElementById('reset').onclick = () => {
+                websocket.send("RESET");
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            };
+
+            window.onload = initWebSocket;
+        </script>
+    </body>
+</html>
