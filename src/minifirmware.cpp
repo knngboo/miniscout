@@ -10,7 +10,7 @@
 // --- Global Object -- //
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
-Adafruit_VL53L0X lox = Adafruit_VL530X();
+Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 
 // --- ESP32 Pin Names --- //
 // I2C & Multiplexer
