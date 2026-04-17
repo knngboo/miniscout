@@ -4,8 +4,8 @@
 // --- Includes --- //
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
-#include <Wire.h> //Multiplexer Library
-#include <Adafruit_VL53L0X.h> //Sensors Library
+#include <Wire.h> // Multiplexer Library
+#include <Adafruit_VL53L0X.h> // Sensors Library
 
 // --- Global Object -- //
 AsyncWebServer server(80);
@@ -27,21 +27,21 @@ Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 #define MTR_LPWM 15 // PWM for Speed Control
 #define MTR_L_IN1 16 // Direction Control 1
 #define MTR_L_IN2 17 // Direction Control 2
-#define MTR_L_C1 33 //C1 -> Pin 33 [Speed/Position A] *Input Only*
-#define MTR_L_C2 32 //C2 -> Pin 32 [Speed/Position B] *Input Only*
+#define MTR_L_C1 33 // Speed/Position A *Input Only*
+#define MTR_L_C2 32 // Speed/Position B *Input Only*
 
 // Right Motor Driver (Channel A)
 #define MTR_RPWM 5 // PWM for Speed Control
 #define MTR_R_IN1 18 // Direction Control 1
 #define MTR_R_IN2 19 // Direction Control 2
-#define MTR_R_C1 35 //C1 -> Pin 35 [Speed/Position A] *Input Only*
-#define MTR_R_C2 34 //C2 -> Pin 34 [Speed/Position B] *Input Only*
+#define MTR_R_C1 35 // Speed/Position A *Input Only*
+#define MTR_R_C2 34 // Speed/Position B *Input Only*
 
 // GPIO PINS: Steering Servo
-#define SERVO_PWM 13 //PWM -> Pin 13 [PWM for Steering Control]
+#define SERVO_PWM 13 // PWM for Steering Control
 
 // GPIO PINS: Buzzer
-#define BUZZER_PWM 27 //PWM -> Pin 27 [PWM for Buzzer Control]
+#define BUZZER_PWM 27 // PWM for Buzzer Control
 
 // --- WiFi Credentials --- //
 // //////////////////////// //
@@ -74,37 +74,40 @@ void setup() {
 
     // --- Declare Pin Modes --- //
     // Multiplexer Control
-    pinMode(MUX_RST, OUTPUT); //Set Reset Pin as an output
+    pinMode(MUX_RST, OUTPUT); // Set Reset Pin
 
     // Right Motor Control
-    pinMode(MTR_RPWM, OUTPUT); //Set RPWM as an output to control speed
-    pinMode(MTR_R_IN1, OUTPUT); //Set Right Direction 1 as an output
-    pinMode(MTR_R_IN2, OUTPUT); //Set Right Direction 2 as an output
+    pinMode(MTR_RPWM, OUTPUT); // Set RPWM
+    pinMode(MTR_R_IN1, OUTPUT); // Set Right Direction 1
+    pinMode(MTR_R_IN2, OUTPUT); // Set Right Direction 2
 
     // Left Motor Control
-    pinMode(MTR_LPWM, OUTPUT); //Set LPWM as an output to control speed
-    pinMode(MTR_L_IN1, OUTPUT); //Set Left Direction 1 as an output
-    pinMode(MTR_L_IN2, OUTPUT); //Set Left Direction 2 as an output
+    pinMode(MTR_LPWM, OUTPUT); // Set LPWM
+    pinMode(MTR_L_IN1, OUTPUT); // Set Left Direction 1
+    pinMode(MTR_L_IN2, OUTPUT); // Set Left Direction 2
 
-    // Motor Encoders
-    pinMode(MTR_L_C1, INPUT); //Set Left Encoder A as an input to listen for rotation pulses
-    pinMode(MTR_L_C2, INPUT); //Set Left Encoder B as an input to listen for rotation pulses
-    pinMode(MTR_R_C1, INPUT); //Set Right Encoder A as an input to listen for rotation pulses
-    pinMode(MTR_R_C2, INPUT); //Set Right Encoder B as an input to listen for rotation pulses
+    // Right Motor Encoders
+    pinMode(MTR_L_C1, INPUT); // Set Left Encoder A
+    pinMode(MTR_L_C2, INPUT); //Set Left Encoder B    
+    
+    // Left Motor Encoders
+    pinMode(MTR_R_C1, INPUT); //Set Right Encoder A
+    pinMode(MTR_R_C2, INPUT); //Set Right Encoder B   
 
     // Servo
-    pinMode(SERVO_PWM, OUTPUT); //Set Servo Pin as an output to send angle position
+    pinMode(SERVO_PWM, OUTPUT); //Set Servo Pin
 
     //Buzzer
-    pinMode(BUZZER_PWM, OUTPUT); //Set Buzzer Pin as an output to trigger audio
+    pinMode(BUZZER_PWM, OUTPUT); //Set Buzzer Pin
 
     // --- Perform a Hrad Reset on I2C --- //
-    digitalWrite(MUX_RST, LOW);
+    digitalWrite(MUX_RST, LOW); // Off
     delay(10);
-    digitalWrite(MUX_RST, HIGH);
+    digitalWrite(MUX_RST, HIGH); // On
     delay(10);
 
-    Serial.begin(115200); //Starts serial communication to computer for debugging
+    // --- Serial Monitor Debugging --- //
+    Serial.begin(115200); // Start 
 
     // --- Start the WiFi Access Point --- //
     WiFi.softAP(ssid, password);
