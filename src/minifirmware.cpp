@@ -6,6 +6,7 @@
 #include <ESPAsyncWebServer.h>
 #include <Wire.h> // Multiplexer Library
 #include <Adafruit_VL53L0X.h> // Sensors Library
+#include <ESPmDNS.h> // Domain Name Library [miniscout.local]
 
 // --- Global Object -- //
 AsyncWebServer server(80);
@@ -190,6 +191,13 @@ void setup() {
     Serial.println(ssid); // {debug}
     Serial.print("IP Address: "); // {debug}
     Serial.println(WiFi.softAPIP()); // {debug}
+
+    // --- DNS Router --- //
+    if (!MDNS.begin("miniscout")) { // Boot mDNS
+        Serial.println("Error setting up MDNS responder!"); // {debug}
+    } else {
+        Serial.println("mDNS responder started at http://miniscout.local"); // {debug}
+    }
 
     // --- System Communication --- //
     ws.onEvent(onEvent); // Bind Socket Logic
