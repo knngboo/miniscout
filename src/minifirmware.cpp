@@ -94,7 +94,7 @@ const char index_html[] PROGMEM = R"rawliteral(
             const ctx =canvas.getContext('2d');
             const status = document.getElementById('status');
 
-            const gateway = 'ws://192.168.4.1/ws';
+            const gateway = `ws://${window.location.hostname}/ws`;
             let websocket;
 
             function initWebSocket() {
