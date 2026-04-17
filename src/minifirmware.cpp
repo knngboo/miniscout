@@ -48,22 +48,97 @@ Adafruit_VL53L0X lox = Adafruit_VL53L0X();
 const char* ssid = "vortex";;
 const char* password = "xxxplaystation";
 
+// --- The Digital World (HTML UI) --- //
+// Stored in PROGMEM (Flash Memory)
+// /////////////////////////////////// //
+const char index_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Map</title>
+        <style>
+            body {
+                font-family: sans-serif; background: #1a1a1a; color: white; text-align: center;
+            }
+            canvas {
+                background: #000; border: 2px solid #444; margin-top: 20px; cursor: crosshair;
+            }
+            .controls {
+                margin-top: 20px;
+            }
+            #scout {
+                background: #2ecc71; color: white;
+            }
+            #stop {
+                background: #e74c3c; color: white;
+            }
+            #reset {
+                background: #3498db; color: white;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>MiniScout Digital World</h1>
+        <div id="status">Status: Disconnected</div>
+
+        <canvas id="mapCanvas" width="600" height="400"></canvas>
+
+        <div class="controls">
+            <button id="scout">SCOUT</button>
+            <button id="stop">STOP</button>
+            <button id="reset">RESET MAP</button>
+        </div>
+        
+        <script>
+            const canvas = document.getElementById('mapCanvas');
+            const ctx =canvas.getContext('2d');
+            const status = document.getElementById('status');
+
+            const gateway = 'ws://192.168.4.1/ws';
+            let websocket;
+
+            function initWebSocket() {
+                websocket = new WebSocket(gateway);
+                websocket.onopen = () => status.innerText = 'Status: Connected to Mini Scout';
+                websocket.onclose = () => status.innerText = 'Status: Disconnected';
+                websocket.onmessage = (event) => {
+                    console.log("Data from Mini Scout:", event.data);
+                };
+            }
+
+            document.getElementById('scout').onclick = () => websocket.send("SCOUT");
+            document.getElementById('stop').onclick = () => websocket.send("STOP");
+            document.getElementById('reset').onclick = () => {
+                websocket.send("RESET");
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            };
+
+            window.onload = initWebSocket;
+        </script>
+    </body>
+</html>)rawliteral";
+
+// --- WebSocket Event Handler --- //
+// /////////////////////////////// //
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
+    // --- Filter: Listen for Data only --- //
     if (type == WS_EVT_DATA) {
-        String message = "";
+        String message = ""; // Create Empty Container
+        // --- Reconstruct Message --- //
+        // Converts raw bits into readable text characters
         for (size_t i = 0; i < len; i++) {
-            message += (char)data[i];
+            message += (char)data[i]; // {Data Reassembly}
         }
+        Serial.print("Command Received: "); // {Debug: Received}
+        Serial.println(message); // {Debug: Command}
 
-        Serial.print("Command Received: ");
-        Serial.println(message);
-
+        // --- Command Switchboard --- //
         if (message == "SCOUT") {
-            Serial.println("Scouting Started...");
+            Serial.println("Scouting Started..."); // [Trigger Drive Logic]
         } else if (message == "STOP") {
-            Serial.println("Scouting Stopped...");
+            Serial.println("Scouting Stopped..."); // [Kill Motors]
         } else if (message == "RESET") {
-            Serial.println("Map Reset...");
+            Serial.println("Map Reset..."); // [Refresh Web UI]
         }
     }
 }
@@ -87,12 +162,12 @@ void setup() {
     pinMode(MTR_L_IN2, OUTPUT); // Set Left Direction 2
 
     // Right Motor Encoders
-    pinMode(MTR_L_C1, INPUT); // Set Left Encoder A
-    pinMode(MTR_L_C2, INPUT); //Set Left Encoder B    
+    pinMode(MTR_R_C1, INPUT); //Set Right Encoder A
+    pinMode(MTR_R_C2, INPUT); //Set Right Encoder B 
     
     // Left Motor Encoders
-    pinMode(MTR_R_C1, INPUT); //Set Right Encoder A
-    pinMode(MTR_R_C2, INPUT); //Set Right Encoder B   
+    pinMode(MTR_L_C1, INPUT); // Set Left Encoder A
+    pinMode(MTR_L_C2, INPUT); //Set Left Encoder B          
 
     // Servo
     pinMode(SERVO_PWM, OUTPUT); //Set Servo Pin
@@ -100,32 +175,33 @@ void setup() {
     //Buzzer
     pinMode(BUZZER_PWM, OUTPUT); //Set Buzzer Pin
 
-    // --- Perform a Hrad Reset on I2C --- //
+    // --- Perform a Hard Reset on I2C --- //
     digitalWrite(MUX_RST, LOW); // Off
     delay(10);
     digitalWrite(MUX_RST, HIGH); // On
     delay(10);
 
     // --- Serial Monitor Debugging --- //
-    Serial.begin(115200); // Start 
+    Serial.begin(115200); // Start Data Link [115200]
 
-    // --- Start the WiFi Access Point --- //
-    WiFi.softAP(ssid, password);
-    Serial.println("AP Started: " + String(ssid)); //{serial debugging}
-    Serial.print("IP Address: "); //{serial debugging}
-    Serial.println(WiFi.softAPIP()); //{serial debugging}
+    // --- Network Hub --- //
+    WiFi.softAP(ssid, password); // Boot "vortex" WiFi
+    Serial.print("AP Started: "); // {debug}
+    Serial.println(ssid); // {debug}
+    Serial.print("IP Address: "); // {debug}
+    Serial.println(WiFi.softAPIP()); // {debug}
 
+    // --- System Communication --- //
+    ws.onEvent(onEvent); // Bind Socket Logic
+    server.addHandler(&ws); // Enable WebSocket Support
 
-    ws.onEvent(onEvent);
-    server.addHandler(&ws);
-
-    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(200, "text/plain", "MiniScout Server is Live. Open the HTML file on your PC.");
+    // --- Web Routes Lambda Function --- //
+    server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+        request->send(200, "text/plain", "MiniScout Server is Live. Open the HTML file on your PC."); // Root Response
     });
-
-    server.begin();
+    server.begin(); // Launch Server
 }
 
 void loop() {
-    ws.cleanupClients();
+    ws.cleanupClients(); // Keep Socket Stable
 }
