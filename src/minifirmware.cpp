@@ -197,7 +197,7 @@ void setup() {
 
     // --- Web Routes Lambda Function --- //
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(200, "text/plain", "MiniScout Server is Live. Open the HTML file on your PC."); // Root Response
+        request->send(200, "text/html", index_html); // Root Response [Send PROGMEM HTML]
     });
     server.begin(); // Launch Server
 }
