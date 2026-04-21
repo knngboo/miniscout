@@ -119,7 +119,7 @@ const char index_html[] PROGMEM = R"rawliteral(
     </body>
 </html>)rawliteral";
 
-// --- WebSocket Event Handler --- //
+// --- WebSocket Event Function --- //
 // /////////////////////////////// //
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type, void *arg, uint8_t *data, size_t len) {
     // --- Filter: Listen for Data only --- //
@@ -142,6 +142,15 @@ void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
             Serial.println("Map Reset...");                 // [Refresh Web UI]
         }
     }
+}
+
+// --- Multiplexer Switcher Function --- //
+// ///////////////////////////////////// //
+void tcaSelect(uint8_t channel) {
+    if (channel > 7) return;
+    Wire.beginTransmission(0x70);
+    Wire.write(1 << channel);
+    Wire.endTransmission();
 }
 
 //// --- Void Setup --- ////
@@ -185,6 +194,22 @@ void setup() {
     // --- Serial Monitor Debugging --- //
     Serial.begin(115200);               // Start Data Link [115200]
 
+    // --- Initialize I2C Bus --- //
+    Wire.begin(I2C_SDA, I2C_SCL);
+
+    // --- Boot Sensors --- //
+    Serial.println("Booting Sensors...");
+    for(int i = 0; i < 3; i++) {
+        tcaSelect(i);
+        if (!lox.begin()) {
+            Serial.print("Sensor Fail: CH ");   // {debug}
+            Serial.println(i);                  // {debug}
+        } else {
+            Serial.print("Sensor Online: CH "); // {debug}
+            Serial.println(i);                  // {debug}
+        }
+    }
+
     // --- Network Hub --- //
     WiFi.softAP(ssid, password);        // Boot "vortex" WiFi
     Serial.print("AP Started: ");       // {debug}
@@ -212,4 +237,34 @@ void setup() {
 
 void loop() {
     ws.cleanupClients();    // Keep Socket Stable
+
+    // --- Telemetry Heartbeat (200ms) --- //
+    static unsigned long lastTime = 0;
+    if (millis() - lastTime > 200) {
+        lastTime = millis();
+
+        int distL = 0, distC = 0, distR = 0;
+        VL53L0X_RangingMeasurementData_t measure;
+
+        // poll Left sensor
+        tcaSelect(MUX_CH_LEFT);
+        lox.rangingTest(&measure, false);
+        if (measure.RangeStatus != 4) distL = measure.RangeMilliMeter;
+
+        // poll Center sensor
+        tcaSelect(MUX_CH_CENTER);
+        lox.rangingTest(&measure, false);
+        if (measure.RangeStatus != 4) distC = measure.RangeMilliMeter;
+
+        // poll Right sensor
+        tcaSelect(MUX_CH_RIGHT);
+        lox.rangingTest(&measure, false);
+        if (measure.RangeStatus != 4) distR = measure.RangeMilliMeter;
+
+        // Construct JSON Payload
+        String json = "{\"L\":" + String(distL) + ",\"C\":" + String(distC) + ",\"R\":" + String(distR) + "}";
+
+        // Broadcast to Web Dashboard
+        ws.textAll(json);
+    }
 }
